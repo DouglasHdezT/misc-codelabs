@@ -433,6 +433,8 @@ Esta actividad consistirá en implementar un web server con autenticación basad
 
 Al final, los estudiantes compartieron sus resultados en la plataforma de github Classroom. Ambiente educativo, donde se centralizan las entregas de este taller.
 
+Esta actividad se realiza en la materia de Programación N-Capas.
+
 ### Planificación
 
 | **Contexto**        | **Descripción**                                                                                                                                   |
@@ -462,18 +464,44 @@ Github classroom, además de permitir subir y administrar repositorios de códig
 
 Esta actividad consiste en, a partir de un codelab y un código base, generar una solución de software que sea automáticamente evaluada por github classroom, y actualice la nota en el moodle de la materia.
 
+Esta actividad se realiza en la materia de Programación N-Capas.
+
 ### Planificación
 
-| **Contexto**        | **Descripción**                                                                                                                                   |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Fecha               | 22/23 mayo de 2022, desde las 18:00 del 22 hasta las 12:00 del 23                                                                                 |
-| Objetivo            | Construir un servidor web con arquitectura REST que implemente un sistema de autenticación                                                        |
-| Tipo de trabajo     | Grupal, Asíncrono                                                                                                                                 |
-| Producto esperado   | - Servidor Web en Spring Boot, que implemente un sistema de autenticación basado en Spring Boot y JWT <br/> - Rutas públicas y privadas de prueba |
-| Tiempo de ejecución | 2 Horas clase (100 min)                                                                                                                           |
+| **Contexto**        | **Descripción**                                                                                                                                                  |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fecha               | 15 de junio de 2022, desde las 18:30 a 20:10                                                                                                |
+| Objetivo            | Construir un servidor web con arquitectura REST que implemente respuesta de colecciones con Paginación y ordenamiento                                            |
+| Tipo de trabajo     | Grupal, Asíncrono                                                                                                                                                |
+| Producto esperado   | - Servidor Web en Spring Boot, que implemente un sistema que devuelva las colecciones de datos paginadas y ordenadas <br/> - Rutas públicas y privadas de prueba |
+| Tiempo de ejecución | 2 Horas clase (100 min)                                                                                                                                          |
 
-
-
+<aside class="primary">
+  <p>
+    La definición del Codelab, junto a las indicaciones y el desarrollo como tal, se encuentran en el  siguiente enlace: <a href="https://douglashdezt.github.io/misc-codelabs/pages/pnc-tallerIV/"> https://douglashdezt.github.io/misc-codelabs/pages/pnc-tallerIV/ </a>
+  </p>
+</aside>
 
 ## Reflexión final
 Duration: 0:05:00
+
+### Conclusiones
+
+- El uso de herramientas digitales en la docencia universitaria mejora el fluyo, actualización y asimilación del conocimiento.
+- La mayoría de estudiantes apoyan la inclusión de herramientas digitales en sus cursos, viendo reflejado una mejora en el rendimiento y en la aplicación de los conocimientos generados
+- Se crea una comunidad que constantemente realiza retroalimentaciones a todos los involucrados, generando un conocimiento comunitario y validado por los resultados que se presentan al final de las evaluaciones.
+- Las herramientas digitales permiten ahondar en temas que, por razones muy específicas, no se pueden realizar de forma satisfactoria en una clase expositiva tradicional.
+
+### Dificultades
+
+- La preparación de Codelabs es extensa, ya que no se debe limitar solo aun guion de clase, sino que debe de contener la cantidad necesaria de información para cumplir con los objetivos y no parecer un contenido indigerible.
+- No todas las herramientas didácticas tienen una aplicabilidad directa en materias más prácticas del área de ingeniería.
+- La educación personalizada que plantean algunas herramientas digitales es muy útil y tienen un gran impacto en la educación de los estudiantes. Pero se vuelve muy impráctica para los docentes cuando se tratan de grupos mas grandes (p.e. 60 por sección).
+- Existe siempre un sector de los estudiantes que se rehúsa a utilizar plataformas distintas a las que está acostumbrado, por lo que entorpece la ejecución de las actividades y el ritmo de los compañeros.
+- Específicamente para la materia de N-Capas, un buen sector de estudiantes ya trabaja, por lo que el tiempo que dedican a la materia es poco, o se limita al tiempo en la clase.
+
+### Mejoras a futuro
+
+- Integrar mas actividades al sistema de calificación automático de github classroom para agilizar los tiempos de calificación.
+- Hacer uso de otras librerías o extensiones, como Live Share, que permiten crear, compartir, y mostrar código en tiempo real; es como un documento en Google Drive, pero con código. Falta probar con grupos grandes, y ver la demanda de recursos
+- Hacer iteraciones de actividades con herramientas expositivas mas dinámicas, que permitan tener feedback del estudiante inmediato, y que no vuelvan engorroso el proceso creación y desarrollo de software.

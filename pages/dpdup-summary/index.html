@@ -446,6 +446,7 @@ ALTER TABLE TICKET_SERVICIO ADD CONSTRAINT fk_ticket_servicio_servicio
 <p>Esto permite dinamizar actividades y complementar los conceptos abordados en una clase. Además, refuerza áreas en el estudiante a partir de la técnica &#34;Aprender haciendo&#34;.</p>
 <p>Esta actividad consistirá en implementar un web server con autenticación basada en la librería Spring Security. Para ello se guiarán de un codelab, donde se detallan los pasos y conceptos que giran al rededor del tema.</p>
 <p>Al final, los estudiantes compartieron sus resultados en la plataforma de github Classroom. Ambiente educativo, donde se centralizan las entregas de este taller.</p>
+<p>Esta actividad se realiza en la materia de Programación N-Capas.</p>
 <h2 is-upgraded>Planificación</h2>
 <table>
 <tr><td colspan="1" rowspan="1"><p><strong>Contexto</strong></p>
@@ -474,38 +475,64 @@ ALTER TABLE TICKET_SERVICIO ADD CONSTRAINT fk_ticket_servicio_servicio
       </google-codelab-step>
     
       <google-codelab-step label="Planificación: Actividad Auto-evaluada" duration="5">
-        <h2 is-upgraded>Planificación</h2>
+        <h2 is-upgraded>Contexto</h2>
+<p>Github classroom, además de permitir subir y administrar repositorios de código para alumnos, brinda muchas herramientas para los docentes, entre ellos se desatacan 2:</p>
+<ul>
+<li>Conexión con Moodle, permitiendo acceder al listado de estudiantes automáticamente, colocar notas, crear actividades, etc</li>
+<li>Calificación automática de código, basada en pruebas de funciones individuales dentro del código, y haciendo uso de github actions. La herramienta crea un ambiente específico para que una app, webserver, o función se ejecute con parámetros específicos y condiciones establecidas. Actualmente el módulo de calificación permite hacer pruebas a multiples lenguajes e infraestructuras, volviéndose versátil y muy útil.</li>
+</ul>
+<p>Esta actividad consiste en, a partir de un codelab y un código base, generar una solución de software que sea automáticamente evaluada por github classroom, y actualice la nota en el moodle de la materia.</p>
+<p>Esta actividad se realiza en la materia de Programación N-Capas.</p>
+<h2 is-upgraded>Planificación</h2>
 <table>
 <tr><td colspan="1" rowspan="1"><p><strong>Contexto</strong></p>
 </td><td colspan="1" rowspan="1"><p><strong>Descripción</strong></p>
 </td></tr>
-<tr><td colspan="2" rowspan="1"><p>Situación de aprendizaje</p>
-</td><td colspan="1" rowspan="1"></td></tr>
-<tr><td colspan="2" rowspan="1"><p>Objetivo</p>
-</td><td colspan="1" rowspan="1"></td></tr>
-<tr><td colspan="2" rowspan="1"><p>Aprendizaje duradero</p>
-</td><td colspan="1" rowspan="1"></td></tr>
-<tr><td colspan="2" rowspan="1"><p>Tiempo</p>
-</td><td colspan="1" rowspan="1"></td></tr>
-</table>
-<table>
-<tr><td colspan="1" rowspan="1"><p><strong>Momento</strong></p>
-</td><td colspan="1" rowspan="1"><p><strong>Actividad</strong></p>
-</td><td colspan="1" rowspan="1"><p><strong>Recurso</strong></p>
+<tr><td colspan="1" rowspan="1"><p>Fecha</p>
+</td><td colspan="1" rowspan="1"><p>15 de junio de 2022, desde las 18:30 a 20:10</p>
 </td></tr>
-<tr><td colspan="3" rowspan="1"><p>Inicio</p>
-</td><td colspan="2" rowspan="1"></td><td colspan="1" rowspan="1"></td></tr>
-<tr><td colspan="3" rowspan="1"><p>Desarrollo</p>
-</td><td colspan="2" rowspan="1"></td><td colspan="1" rowspan="1"></td></tr>
-<tr><td colspan="3" rowspan="1"><p>Cierre</p>
-</td><td colspan="2" rowspan="1"></td><td colspan="1" rowspan="1"></td></tr>
+<tr><td colspan="1" rowspan="1"><p>Objetivo</p>
+</td><td colspan="1" rowspan="1"><p>Construir un servidor web con arquitectura REST que implemente respuesta de colecciones con Paginación y ordenamiento</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Tipo de trabajo</p>
+</td><td colspan="1" rowspan="1"><p>Grupal, Asíncrono</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Producto esperado</p>
+</td><td colspan="1" rowspan="1"><p>- Servidor Web en Spring Boot, que implemente un sistema que devuelva las colecciones de datos paginadas y ordenadas <br> - Rutas públicas y privadas de prueba</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Tiempo de ejecución</p>
+</td><td colspan="1" rowspan="1"><p>2 Horas clase (100 min)</p>
+</td></tr>
 </table>
+<aside class="special"><p>     La definición del Codelab, junto a las indicaciones y el desarrollo como tal, se encuentran en el  siguiente enlace: <a href="https://douglashdezt.github.io/misc-codelabs/pages/pnc-tallerIV/" target="_blank"> https://douglashdezt.github.io/misc-codelabs/pages/pnc-tallerIV/ </a>   </p>
+</aside>
 
 
       </google-codelab-step>
     
       <google-codelab-step label="Reflexión final" duration="5">
-        
+        <h2 is-upgraded>Conclusiones</h2>
+<ul>
+<li>El uso de herramientas digitales en la docencia universitaria mejora el fluyo, actualización y asimilación del conocimiento.</li>
+<li>La mayoría de estudiantes apoyan la inclusión de herramientas digitales en sus cursos, viendo reflejado una mejora en el rendimiento y en la aplicación de los conocimientos generados</li>
+<li>Se crea una comunidad que constantemente realiza retroalimentaciones a todos los involucrados, generando un conocimiento comunitario y validado por los resultados que se presentan al final de las evaluaciones.</li>
+<li>Las herramientas digitales permiten ahondar en temas que, por razones muy específicas, no se pueden realizar de forma satisfactoria en una clase expositiva tradicional.</li>
+</ul>
+<h2 is-upgraded>Dificultades</h2>
+<ul>
+<li>La preparación de Codelabs es extensa, ya que no se debe limitar solo aun guion de clase, sino que debe de contener la cantidad necesaria de información para cumplir con los objetivos y no parecer un contenido indigerible.</li>
+<li>No todas las herramientas didácticas tienen una aplicabilidad directa en materias más prácticas del área de ingeniería.</li>
+<li>La educación personalizada que plantean algunas herramientas digitales es muy útil y tienen un gran impacto en la educación de los estudiantes. Pero se vuelve muy impráctica para los docentes cuando se tratan de grupos mas grandes (p.e. 60 por sección).</li>
+<li>Existe siempre un sector de los estudiantes que se rehúsa a utilizar plataformas distintas a las que está acostumbrado, por lo que entorpece la ejecución de las actividades y el ritmo de los compañeros.</li>
+<li>Específicamente para la materia de N-Capas, un buen sector de estudiantes ya trabaja, por lo que el tiempo que dedican a la materia es poco, o se limita al tiempo en la clase.</li>
+</ul>
+<h2 is-upgraded>Mejoras a futuro</h2>
+<ul>
+<li>Integrar mas actividades al sistema de calificación automático de github classroom para agilizar los tiempos de calificación.</li>
+<li>Hacer uso de otras librerías o extensiones, como Live Share, que permiten crear, compartir, y mostrar código en tiempo real; es como un documento en Google Drive, pero con código. Falta probar con grupos grandes, y ver la demanda de recursos</li>
+<li>Hacer iteraciones de actividades con herramientas expositivas mas dinámicas, que permitan tener feedback del estudiante inmediato, y que no vuelvan engorroso el proceso creación y desarrollo de software.</li>
+</ul>
+
 
       </google-codelab-step>
     
