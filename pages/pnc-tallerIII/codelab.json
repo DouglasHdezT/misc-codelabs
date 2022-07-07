@@ -1,0 +1,26 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2022-05-21T12:14:00-06:00",
+  "id": "taller-03",
+  "duration": 100,
+  "title": "Taller III - Login con Spring Security",
+  "summary": "Taller III - Login con Spring Security",
+  "source": ".\\markdown\\taller3.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "java"
+  ],
+  "tags": [
+    "diy",
+    "taller",
+    "web"
+  ],
+  "feedback": "https://dei.uca.edu.sv",
+  "url": "taller-03"
+}

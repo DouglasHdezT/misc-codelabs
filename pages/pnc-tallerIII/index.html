@@ -1,0 +1,863 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Taller III - Login con Spring Security</title>
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/codelab-elements/codelab-elements.css">
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <google-codelab-analytics gaid="UA-49880327-14"></google-codelab-analytics>
+  <google-codelab codelab-gaid=""
+                  id="taller-03"
+                  title="Taller III - Login con Spring Security"
+                  environment="web"
+                  feedback-link="https://dei.uca.edu.sv">
+    
+      <google-codelab-step label="Introducción" duration="3">
+        <h2 is-upgraded>Dinámica</h2>
+<p>Durante este taller se implementará la funcionalidad, del lado del backend, de &#34;iniciar sesión&#34; como usuario registrado en la aplicación; para ello se hará uso de las tecnologías y librerías que proporciona Spring Security.</p>
+<p>Se realizarán dos etapas en el taller:</p>
+<ul>
+<li>Una parte guiada donde, a partir de estructuras existentes y conceptos explicados, se construirá todo el módulo referente a &#34;iniciar sesión&#34; con un usuario; además, se implementarán filtros para rutas, con el fin de indicar cuáles requerirán autenticación y cuáles no.</li>
+<li>La segunda parte del taller consistirá en construir rutas que, a partir del resultado anterior, hagan uso de la autenticación recién implementada.</li>
+</ul>
+<h2 is-upgraded>¿Qué aprenderás?</h2>
+<p>Durante la realización de este taller se desarrollarán los siguientes temas:</p>
+<ul>
+<li>Rutas con autenticación en Spring Security</li>
+<li>Cabecera de autenticación con token de acceso</li>
+<li>Json Web Token - JWT</li>
+</ul>
+<h2 is-upgraded>Requisitos</h2>
+<ul>
+<li>Spring Tools Suite (IDE)</li>
+<li>Instancia de bases de datos con el gestor Postgres</li>
+<li>Cliente de bases de datos - Dbeaver</li>
+<li>Cliente REST para peticiones HTTP - Insomnia</li>
+</ul>
+<aside class="special"><p>     El código fuente base y el script con los comandos DDL y DML de la base datos, pueden encontrarse en el siguiente enlace: <a href="https://github.com/PNC-2022-Codes/08-Rest-library" target="_blank"> https://github.com/PNC-2022-Codes/08-Rest-library </a></p>
+</aside>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Dependencias" duration="2">
+        <p>Para realizar el inicio de sesión haciendo uso de JWT, se necesita importar una libraría que permita generar y verificar este tipo de tokens. Para ello, dentro del archivo <em>pom.xml</em>, se agregará la siguiente dependencia:</p>
+<pre><code language="language-xml" class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;
+    &lt;artifactId&gt;jjwt&lt;/artifactId&gt;
+    &lt;version&gt;0.9.1&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+<aside class="special"><p>     El resto de dependencias ya se encuentran incluidas en el proyecto. Se recomienda revisar el contenido del <em>pom.xml</em> para garantizar esta situación </p>
+</aside>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Tabla de registro de tokens" duration="15">
+        <h2 is-upgraded>Análisis</h2>
+<p>Lo primero se realizará es una tabla de registros de tokens en la base de datos. Esta permitirá llevar, de forma precisa, un registro histórico de los tokens por cada usuario que inicie sesión en el sistema.</p>
+<p>Para su implementación, se basará en el siguiente diagrama entidad relación, y su correspondiente transformación a diagrama Relacional:</p>
+<p class="image-container"><img alt="Diagrama ER y R de tokens" src="img\\16f0f950de5a3578.png"></p>
+<p>En este caso se define como cardinalidad 1:N de Usuario a Token, ya que un usuario puede registrar multiples sesiones, ya sean activas o no. Además, es importante recalcar la debilidad que presentan los tokens con respecto a los usuarios; esto implica que, cuando un usuario sea eliminado de la base, los tokens referentes a él deben de eliminarse igualmente</p>
+<p>Las columnas de la nueva permiten representar y conocer en todo momento el estado de las claves de acceso de los usuarios autenticados. Esto garantiza que, ante una vulnerabilidad de la firma de los tokens, no puedan acceder claves que no hayan sido generadas por el usuario. Cada campo representa lo siguiente:</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Columna</p>
+</td><td colspan="1" rowspan="1"><p>Tipo</p>
+</td><td colspan="1" rowspan="1"><p>¿Nulo?</p>
+</td><td colspan="1" rowspan="1"><p>PK/FK</p>
+</td><td colspan="1" rowspan="1"><p>Descripción</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>id</strong></p>
+</td><td colspan="1" rowspan="1"><p>Serial</p>
+</td><td colspan="1" rowspan="1"><p>❌</p>
+</td><td colspan="1" rowspan="1"><p>PK</p>
+</td><td colspan="1" rowspan="1"><p>Columna única auto generada que representa la clave primaria de la entidad Token</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>content</strong></p>
+</td><td colspan="1" rowspan="1"><p>Varchar</p>
+</td><td colspan="1" rowspan="1"><p>❌</p>
+</td><td colspan="1" rowspan="1"><p>~</p>
+</td><td colspan="1" rowspan="1"><p>Cadena de texto que representa al token como tal</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>valid</strong></p>
+</td><td colspan="1" rowspan="1"><p>Boolean</p>
+</td><td colspan="1" rowspan="1"><p>❌</p>
+</td><td colspan="1" rowspan="1"><p>~</p>
+</td><td colspan="1" rowspan="1"><p>Bandera que indica si el token es válido o no</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>timestamp</strong></p>
+</td><td colspan="1" rowspan="1"><p>Timestamp</p>
+</td><td colspan="1" rowspan="1"><p>❌</p>
+</td><td colspan="1" rowspan="1"><p>~</p>
+</td><td colspan="1" rowspan="1"><p>Marca de tiempo en la que el token fue insertado en el sistema</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>id_user</strong></p>
+</td><td colspan="1" rowspan="1"><p>Long</p>
+</td><td colspan="1" rowspan="1"><p>❌</p>
+</td><td colspan="1" rowspan="1"><p>FK</p>
+</td><td colspan="1" rowspan="1"><p>Llave foránea que representa la información del usuario</p>
+</td></tr>
+</table>
+<h2 is-upgraded>Implementación en la base</h2>
+<p>Dentro del Cliente de Bases de datos, se debe ejecutar el siguiente script DDL:</p>
+<pre><code language="language-sql" class="language-sql">CREATE TABLE public.&#34;token&#34; (
+	id serial NOT NULL,
+	&#34;content&#34; varchar NOT NULL,
+	active boolean NOT NULL DEFAULT true,
+	&#34;timestamp&#34; timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	id_user integer NOT NULL,
+	CONSTRAINT token_pk PRIMARY KEY (id),
+	CONSTRAINT token_fk FOREIGN KEY (id_user) REFERENCES public.&#34;user&#34;(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+</code></pre>
+<p>De este script se deben recalcar los siguientes puntos:</p>
+<ul>
+<li>El id es de tipo serial, por lo que se ha creado una secuencia que llevará el control de este valor.</li>
+<li>El timestamp será asignado por defecto</li>
+<li>La llave foránea ha sido marcada por los eventos <em>delete</em> y <em>update</em> en cascada. Esto debido a la debilidad que se presenta respecto a usuario</li>
+</ul>
+<h2 is-upgraded>Implementación en Java</h2>
+<p>Dentro del paquete <strong>models.entities</strong>, se creará una clase llamada <strong>Token.java</strong>. Esta servirá para representar, a través del ORM la entidad que se acaba de crear en la base de datos. Se debe marcar la clase con la anotación <em>@Entity</em>, junto al nombre de la tabla</p>
+<pre><code language="language-java" class="language-java">@Entity(name = &#34;token&#34;)
+public class Token {
+
+}
+</code></pre>
+<p>Luego se deben incluir los atributos de la tabla dentro del POJO. Para ello se debe tomar en cuenta:</p>
+<ul>
+<li>El nombre de la secuencia asignada al id de esta tabla. Consultarlo en el cliente de bases de datos</li>
+<li>El tipo de representación a utilizar para el <em>timestamp</em></li>
+<li>Tanto <em>active</em> como <em>timestamp</em> tienen valores por defectos, por lo que no deberán ser insertados al momento de crear un token. Esto se logra utilizando el parámetro <em>insertable = false</em> en la anotación <em>@Column</em>. Esto le indicará a Hibernate que no debe mandar ese valor al momento de insertar un nuevo ejemplar a la tabla</li>
+<li>El campo <em>timestamp</em> debe de permanecer inmutable en el tiempo; utilizando el parámetro <em>updatable</em> como en el caso anterior, le indica a Hibernate que no envíe este parámetro cuando se realice una actualización.</li>
+</ul>
+<pre><code language="language-java" class="language-java">import java.sql.Timestamp;
+
+...
+
+@Id
+@Column(name = &#34;id&#34;)
+@SequenceGenerator(name = &#34;token_id_gen&#34;, sequenceName = &#34;token_id_seq&#34;, allocationSize = 1)
+@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = &#34;token_id_gen&#34;)
+private Long id;
+
+@Column(name = &#34;content&#34;)
+private String content;
+
+@Column(name = &#34;active&#34;, insertable = false)
+private Boolean active;
+
+@Column(name = &#34;timestamp&#34;, insertable = false, updatable = false)
+private Timestamp timestamp;
+
+@ManyToOne(fetch = FetchType.EAGER)
+@JoinColumn(name = &#34;id_user&#34;)
+private User user;
+</code></pre>
+<aside class="warning"><p>     Recuerda auto generar el constructor por defecto, un constructor con <strong>los campos que puedan insertarse</strong> (content, user), y los setters y getters de todos los campos. </p>
+</aside>
+<p>Para que la relación pueda identificarse de forma bidireccional, se añadirá la lista de tokens a la entidad usuario. Cabe recalcar que, en este caso, al existir una debilidad clara entre entidades, se definirá la cascada para todos los casos, para así garantizar la integridad en la base.</p>
+<pre><code language="language-java" class="language-java">@Entity(name = &#34;user&#34;)
+public class User {
+    ...
+
+    @OneToMany(mappedBy = &#34;user&#34;, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	private List&lt;Token&gt; tokens;
+
+    ...
+}
+</code></pre>
+<aside class="warning"><p>     Recuerda auto generar el setter y getter de este campo. </p>
+</aside>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Herramientas para procesar el token" duration="10">
+        <p>A continuación, se creará una clase utilitaria donde se definirán los métodos necesarios para crear y verificar cualquier token. La creación de un JWT depende de una clave secreta, la cual se utiliza para firmar y verificar dicho token. Esta debe de ser privada y se debe garantizar que no sea fácil vulnerar.</p>
+<p>Lo primero será crear un paquete en el la raíz del proyecto llamado <strong>utils</strong>. En este se almacenaran todos los componentes que contengan funciones extra o utilitarias</p>
+<pre>com
+└── douglashdezt
+    └── library
+        ├── controllers
+        ├── models
+        │   ├── dtos
+        │   └── entities
+        ├── repositories
+        ├── services
+        │   └── impls
+        └── utils
+</pre>
+<p>Dentro del paquete utils se debe crear una clase dentro de un nuevo archivo llamado <strong>TokenManager.java</strong>, esta clase contendrá los métodos necesarios para gestionar la validez y creación de un token. Se anota con <em>@Component</em> para indicar a Spring que puede ser un componente inyectable.</p>
+<pre><code language="language-java" class="language-java">@Component
+public class TokenManager {
+
+}
+</code></pre>
+<p>Para definir el secreto de nuestro token, se deberá de agregar un nuevo valor en el archivo <em>application.properties</em>. El identificador de la propiedad será <em>jwt.secret</em>, aunque pudiese ser cualquier otro.</p>
+<pre><code language="language-yml" class="language-yml"># jwt secret
+jwt.secret=UltraSecretCode1234
+</code></pre>
+<p>De regreso en la clase, podemos definir dos constantes: 1. El secreto, que será incluido a partir de la variable <em>jwt.secret</em> con la anotación <em>@Value</em>. 2. El tiempo de validez para el token, expresado en milisegundos.</p>
+<pre><code language="language-java" class="language-java">@Value(&#34;${jwt.secret}&#34;)
+private String jwtSecret;
+
+//15 days
+private static final long TOKEN_EXP_TIME_MILLIS = 15 * 24 * 60 * 60 * 1000;
+</code></pre>
+<p>Además de estos valores, se necesita mapear la información a almacenar dentro del cuerpo del token. Al implementar la tabla de Tokens, solo es necesario que el token almacene el id o el username del usuario, con el fin de poder buscarlo en la base.</p>
+<p>A partir de este punto, se crearán 3 métodos dentro de la clase utilitaria:</p>
+<ol type="1">
+<li><strong>generateJwtToken</strong>: Encargado de crear un token firmado con la información del usuario, y valido hasta dentro de 15 días</li>
+</ol>
+<pre><code language="language-java" class="language-java">public String generateJwtToken(String username) {
+    Map&lt;String, Object&gt; claims = new HashMap&lt;&gt;();
+    return Jwts.builder()
+            .setClaims(claims)
+            .setSubject(username)
+            .setIssuedAt(new Date(System.currentTimeMillis()))
+            .setExpiration(new Date(System.currentTimeMillis() + TOKEN_EXP_TIME_MILLIS))
+            .signWith(SignatureAlgorithm.HS512, jwtSecret)
+            .compact();
+}
+</code></pre>
+<ol type="1" start="2">
+<li><strong>getUsernameFromToken</strong>: Encargado de obtener el username del token. Este pude ser nulo si no está presente en el string.</li>
+</ol>
+<pre><code language="language-java" class="language-java">public String getUsernameFromToken(String token) {
+    final Claims claims = Jwts.parser()
+            .setSigningKey(jwtSecret)
+            .parseClaimsJws(token)
+            .getBody();
+    return claims.getSubject();
+}	
+</code></pre>
+<ol type="1" start="3">
+<li><strong>validateJwtToken</strong>: Encargado de verificar la validez del token. Si alguno de los métodos de la librería llegase a lanzar una excepción, se retornará falso.</li>
+</ol>
+<pre><code language="language-java" class="language-java">public Boolean validateJwtToken(String token, String givenUsername) {
+    try {
+        String username = getUsernameFromToken(token);
+        Claims claims = Jwts.parser()
+                .setSigningKey(jwtSecret)
+                .parseClaimsJws(token)
+                .getBody();
+        
+        Boolean isTokenExpired = claims.getExpiration().before(new Date());
+        
+        return (username.equals(givenUsername) &amp;&amp; !isTokenExpired);
+    }catch (Exception e) {
+        return false;
+    }
+	}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Servicio de autenticación" duration="5">
+        <p>Spring Security, para poder verificar el usuario y la contraseña, necesita que le indiquemos una forma de obtener un usuario a partir de &#34;username&#34;.</p>
+<p>Para ello se implementara la definición de un <em>UserDetailsService</em>; esta interfaz es proveída por la librería de Spring Security, y requiere la definición del método <em>loadUserByUsername</em>, el cual retornará un objeto de tipo <em>UserDetails</em> (igual proporcionada por la librería) con la información necesaria para validar la identidad de un usuario. En este caso usuario y contraseña.</p>
+<p>Se hará uso del Servicio ya implementado de Usuario, con el fin de obtener la información necesaria de la base de datos.</p>
+<p>Lo primero será crear una clase dentro del paquete <em>services.impls</em>, llamada <em>AuthUserDetailsServiceImpl</em>, implementando la interfaz previamente mencionada, sobre escribiendo el método <em>loadUserByUsername</em>, e importando el servicio de usuario</p>
+<pre><code language="language-java" class="language-java">@Service
+public class AuthUserDetailsServiceImpl implements UserDetailsService{
+
+	@Autowired
+	UserService userService;
+	
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		
+	}
+
+}
+
+</code></pre>
+<p>Luego, a partir del username recibido, se buscará al usuario dentro de la base, y sus datos de autenticación se pasarán a un objeto de tipo <em>UserDetails</em>, entendible para Spring Security.</p>
+<p>En dado caso no se encuentre un usuario válido, se retornará una excepción de tipo <em>UsernameNotFoundException</em></p>
+<pre><code language="language-java" class="language-java">try {
+    User userFound = userService.findOneByIdentifer(username);
+
+    if(userFound != null) {
+        return new org.springframework.security.core.userdetails.User(
+                    userFound.getUsername(),
+                    userFound.getPassword(),
+                    new ArrayList&lt;&gt;()
+                );
+    }else {
+        throw new UsernameNotFoundException(&#34;Usuario no encontrado: &#34; + username);
+    }
+} catch (Exception e) {
+    throw new UsernameNotFoundException(&#34;Usuario no encontrado: &#34; + username);
+}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Filtro de Token JWT" duration="10">
+        <p>Además de proporcionar a Spring un método con el que pueda obtener un usuario, se creará un filtro que le permita a Spring Security analizar la petición y saber si esta trae o no un token valido para el proceso de autenticación.</p>
+<p>Específicamente, este filtro servirá para analizar las peticiones que se encuentren protegidas a nivel de rutas.</p>
+<h2 is-upgraded>Preparativos</h2>
+<p>Antes de configurar el filtro, de creará un método que permita comparar, con la base, los tokens validos que el usuario posee. Además, se limpiará el registro, dependiendo si los tokens siguen o no validos.</p>
+<p>Para ello, se creará el JPA repository de Token, que permitirá acceder a los datos, a través de la entidad previamente definida.</p>
+<p>Dentro de esta clase, se establecerá una &#34;query&#34; que permita consultar los tokens activos de un usuario en particular.</p>
+<pre><code language="language-java" class="language-java">public interface TokenRepository extends JpaRepository&lt;Token, Long&gt;{
+    List&lt;Token&gt; findByUserAndActive(User user, Boolean active);
+}
+</code></pre>
+<p>Luego, dentro del servicio de usuario, se debe declarar un método que verifique la validez de un token con respecto a un usuario.</p>
+<pre><code language="language-java" class="language-java">public interface UserService {
+    @Autowired 
+	private TokenRepository tokenRepository;
+	
+	@Autowired
+	private TokenManager tokenManager;
+
+	...
+	
+    Boolean isTokenValid(User user, String token) throws Exception;
+}
+</code></pre>
+<p>Y en la implementación del servicio se definirán dos métodos:</p>
+<ol type="1">
+<li><strong>cleanTokens</strong>: Encargado de verificar los tokens activos y desactivar los que ya no son válidos. Es un método particular y privado de la implementación</li>
+</ol>
+<pre><code language="language-java" class="language-java">@Transactional(rollbackOn = Exception.class)
+private void cleanTokens(User user) {
+    List&lt;Token&gt; tokens = tokenRepository.findByUserAndActive(user, true);
+    
+    tokens.forEach((userToken) -&gt; {
+        if(!tokenManager.validateJwtToken(userToken.getContent(), user.getUsername())) {
+            userToken.setActive(false);
+            tokenRepository.save(userToken);
+        }
+    });
+}
+</code></pre>
+<ol type="1">
+<li><strong>isTokenValid</strong>: Definición del método declarado en la interfaz del servicio que, dado un usuario y un token, verificará la validez del mismo, limpiando los registros por el camino.</li>
+</ol>
+<pre><code language="language-java" class="language-java">@Override
+@Transactional(rollbackOn = Exception.class)
+public Boolean isTokenValid(User user, String token) throws Exception {
+    cleanTokens(user);
+    
+    List&lt;Token&gt; tokens = tokenRepository.findByUserAndActive(user, true);
+            
+    return tokens.stream()
+    .filter((userToken) -&gt; {
+        return userToken.getContent().equals(token) &amp;&amp; userToken.getActive();
+    })
+    .findAny()
+    .orElse(null) != null;
+}
+</code></pre>
+<h2 is-upgraded>Filtro</h2>
+<p>Para ello, se hará uso de una clase predeterminada que proporciona Spring Web, <em>OncePerRequestFilter</em> la cual, al heredar de ella, permite analizar cada petición que llegue al servicio web cuando se le indique; es decir, en todas las rutas que se protejan de la API</p>
+<p>Lo primero será  crear una clase en el paquete <em>utils</em> llamada <em>JwtFilter</em> y hacerla heredar de <em>OncePerRequestFilter</em>; esto permitirá sobre escribir el método <em>doFilterInternal</em>, que realiza la verificación en cada petición donde se utilice el filtro. Además, se importará el tokenManager, el servicio de UserDetails, y el servicio del usuario en la base</p>
+<pre><code language="language-java" class="language-java">@Component
+public class JwtFilter extends OncePerRequestFilter{
+
+	@Autowired
+	private AuthUserDetailsServiceImpl userDetailsService;
+	
+	@Autowired
+	private TokenManager tokenManager;
+	
+	@Autowired
+	private UserService userService;
+	
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+			throws ServletException, IOException {
+		
+	}
+
+}
+</code></pre>
+<p>Dentro del método, lo primero a realizar es la existencia, validez del token que se envía por la petición, y obtener el usuario que se &#34;supuestamente&#34; se está identificando.</p>
+<pre><code language="language-java" class="language-java">String tokenHeader = request.getHeader(&#34;Authorization&#34;);
+String username = null;
+String token = null;
+
+if(tokenHeader != null &amp;&amp; tokenHeader.startsWith(&#34;Bearer &#34;)) {
+    token = tokenHeader.substring(7);
+    
+    try {
+        username = tokenManager.getUsernameFromToken(token);
+    } catch (IllegalArgumentException e) {
+        System.out.println(&#34;Unable to get JWT Token&#34;);
+    } catch (ExpiredJwtException e) {
+        System.out.println(&#34;JWT TOKEN has expired&#34;);
+    } catch (MalformedJwtException e) {
+        System.out.println(&#34;JWT Malformado&#34;);
+    }
+} else {
+    System.out.println(&#34;Bearer string not found&#34;);
+}
+</code></pre>
+<p>Luego de verificar que el token sea valido, se debe de verificar que el usuario identificado exista en la base de datos, y que el token que está compartiendo se encuentre registrado dentro de sus tokens validos.</p>
+<p>Al verificar que el token sea valido, se configura un token de autenticación indicando, al resto de la cadena, que la identificación ha sido exitosa. Caso contrario no se realiza nada, solo se continua con el proceso; el resto de middlewares o interceptores que requieran autenticación se encargarán de negar la petición.</p>
+<pre><code language="language-java" class="language-java">if (username != null &amp;&amp; SecurityContextHolder.getContext().getAuthentication() == null) {
+    try {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        User userFound = userService.findOneByIdentifer(username);
+        
+        if(userFound != null) {
+            boolean isTokenRegistered = userService.isTokenValid(userFound, token);
+            
+            if(isTokenRegistered) {
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities()
+                );
+                
+                authToken.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+                
+                SecurityContextHolder
+                    .getContext()
+                    .setAuthentication(authToken);
+            }
+        }
+        
+    } catch(Exception e) {
+        System.err.println(e);
+        System.out.println(&#34;Error in token verification&#34;);
+    }
+}
+
+filterChain.doFilter(request, response);
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Manejo de errores inherentes a la autenticación de usuario" duration="5">
+        <p>Para poder indicar a Spring Security que retornar en caso exista un error con la autenticación con Token del usuario, Se debe crear una clase que implemente la interfaz <em>AuthenticationEntryPoint</em>, y que permita rechazar todas aquellas peticiones que no cumplan con los requerimientos de necesarios de autenticación en la aplicación.</p>
+<p>Esta clase se llamará <strong>JwtAuthenticationEntryPoint</strong> y se encontrará en el paquete <strong>utils</strong>, dentro de la cual se deberá implementar el método commence, que se encargará de rechazar todas las peticiones en los casos planteados anteriormente.</p>
+<pre><code language="language-java" class="language-java">@Component
+public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint{
+
+	@Override
+	public void commence(HttpServletRequest request, HttpServletResponse response,
+			AuthenticationException authException) throws IOException, ServletException {
+		
+		response.sendError(HttpServletResponse.SC_UNAUTHORIZED, &#34;Unauthorized&#34;);
+		
+	}
+
+}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Configuración de filtros, handlers, y beans" duration="15">
+        <p>Para hacer efectiva la configuración definida hasta el momento, se deben de modificar los parámetros que spring security plantea al importar la librería en los proyectos. Para ello, se creará un nuevo paquete llamado <strong>configs</strong> dentro de la raíz del proyecto.</p>
+<pre>com
+└── douglashdezt
+    └── library
+        ├── configs
+        ├── controllers
+        ├── models
+        │   ├── dtos
+        │   └── entities
+        ├── repositories
+        ├── services
+        │   └── impls
+        └── utils
+</pre>
+<p>Dentro, se creará una clase llamada <em>WebSecurityConfig</em> la cual heredará de <em>WebSecurityConfigurerAdapter</em>, y será anotada por <em>@Config</em>, <em>@EnableWebSecurity</em>  y <em>@EnableGlobalMethodSecurity(prePostEnable = true)</em>; además de inyectarán el EntryPoint que maneja los errores, el Filter que verifica el token, y userDetailsService</p>
+<pre><code language="language-java" class="language-java">@Configuration
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
+
+	@Autowired
+	private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+	
+	@Autowired
+	private UserDetailsService userDetailsService;
+	
+	@Autowired
+	private JwtFilter jwtFilter;
+	
+	
+}
+</code></pre>
+<p>Luego, se deberá inyectar, en forma de método, un <em>AuthenticationManagerBuilder</em>, el cual permitirá establecer como método para obtener la información dentro de la autenticación por usuario y contraseña, el servicio de userDetails. Además, se inyectará el bean de <em>passwordEncoder</em>, para poder indicar el proceso de encriptar la contraseña.</p>
+<pre><code language="language-java" class="language-java">@Autowired
+private PasswordEncoder passwordEncoder;
+
+@Autowired
+public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+    // configure AuthenticationManager so that it knows from where to load
+    // user for matching credentials
+    // Use BCryptPasswordEncoder
+    auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
+}
+</code></pre>
+<p>Posteriormente, se debe crear el bean referente al <em>AuthenticationManager</em>, el cual permitirá inyectar un método de autenticación que permita, de forma directa, autenticar por username y contraseña, a un usuario en alguna ruta del controlador</p>
+<pre><code language="language-java" class="language-java">@Bean
+@Override
+protected AuthenticationManager authenticationManager() throws Exception {
+    return super.authenticationManagerBean();
+}
+</code></pre>
+<p>Por último, se deberá modificar la configuración general de Spring Security, a través del método <em>configure</em> y como parámetro <em>HttpSecurity</em>. En este se definirán las rutas públicas, y por defecto, aquellas que no sean declaradas, se tomarán como privadas, requiriendo de autenticación para poder consultarlas. En el caso particular de este taller, solo se dejará pública la ruta &#34;/auth/**&#34;</p>
+<p>Ademas se desactivará el filtro del CORS, debido que, alñ estar trabajando con clientes remotos en ambiente de desarrollo, generará muchos inconvenientes; Se configurará el Entry Point como handler de errores por defecto; Se establecerá que la comunicación entre cliente y servidor sea SesiónLess, debido a que se está implementado una RestApi</p>
+<p>Al final del método s definirá el filtro JWT como predeterminado para la autenticación en general.</p>
+<pre><code language="language-java" class="language-java">@Override
+protected void configure(HttpSecurity http) throws Exception {
+    http
+        //Cors y http basic desabilitado
+        .httpBasic().and().csrf().disable()
+        //Filtro de rutas
+        .authorizeRequests()
+            .antMatchers(&#34;/auth/**&#34;).permitAll()
+            .anyRequest().authenticated()
+        .and()
+        //Manejador de errores
+        .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint)
+        .and()
+        //Configuracion de session
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+    
+    http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+}
+</code></pre>
+<aside class="warning"><p>     Esta misma configuración ya se había realizado en el archivo principal que ejecuta la aplicación de Spring. Se debe de limpiar ese contenido y dejar el archivo solo con la configuración inicial. </p>
+</aside>
+<pre><code language="language-java" class="language-java">@SpringBootApplication
+public class LibraryRestApplication{
+	public static void main(String[] args) {
+		SpringApplication.run(LibraryRestApplication.class, args);
+	}
+
+    @Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Ruta de login" duration="20">
+        <p>Lo último a realizar será el controlador de login, pero antes de realizarlo se deberán agregar dtos y repositorios que permitan optimizar la comunicación entre los componentes</p>
+<ol type="1">
+<li><strong>LoginDTO.java</strong>: Encargado de contener el identificador y la contraseña para realizar el login en la aplicación</li>
+</ol>
+<pre><code language="language-java" class="language-java">public class LoginDTO {
+	@NotBlank
+	private String identifier;
+	
+	@NotBlank
+	private String password;
+}
+</code></pre>
+<ol type="1" start="2">
+<li><strong>TokenDTO.java</strong>: Encargado de contener la respuesta del token para los clientes autenticados exitosamente.</li>
+</ol>
+<pre><code language="language-java" class="language-java">public class TokenDTO {
+	private String token;
+}
+</code></pre>
+<p>También se creará un nuevo método al servicio de usuario, llamado <em>insertToken</em>, el cual se encargará de ingresar un token a la base cuando la autentificación sea exitosa. Además, limpiará los registros que ya no sean válidos en la tabla token.</p>
+<pre><code language="language-java" class="language-java">public interface UserService {
+    ...
+	void insertToken(User user, String token);
+}
+
+</code></pre>
+<pre><code language="language-java" class="language-java">public class UserServiceImpl implements UserService {
+
+    @Override
+	@Transactional(rollbackOn = Exception.class)
+	public void insertToken(User user, String token) throws Exception {
+		cleanTokens(user);
+		
+		Token newToken = new Token(token, user);
+		tokenRepository.save(newToken);
+	}
+
+}
+</code></pre>
+<p>Para finalizar se debe de añadir el controlador para login en authController. Este hará uso del manager de autenticación para comparar la contraseña con la ingresada por el usuario. Además, se ingresará el token a la tabla de tokens creada al inicio de este taller.</p>
+<pre><code language="language-java" class="language-java">@PostMapping(&#34;/signin&#34;)
+private ResponseEntity&lt;TokenDTO&gt; login(@Valid LoginDTO loginInfo, BindingResult result) {
+    try {
+        
+        if(result.hasErrors()) {
+            return new ResponseEntity&lt;&gt;(
+                    new TokenDTO(),
+                    HttpStatus.BAD_REQUEST
+                );
+        }
+        
+        User user = userService.findOneByIdentifer(loginInfo.getIdentifier());
+        
+        if(!userService.comparePassword(user, loginInfo.getPassword())) {
+            return new ResponseEntity&lt;&gt;(
+                    new TokenDTO(),
+                    HttpStatus.UNAUTHORIZED
+                );
+        }
+        
+        final String token = tokenManager.generateJwtToken(user.getUsername());
+        
+        userService.insertToken(user, token); 
+        
+        return new ResponseEntity&lt;&gt;(
+                    new TokenDTO(token),
+                    HttpStatus.CREATED
+                );
+        
+    } catch (Exception e) {
+        System.out.println(e.getMessage());
+        return new ResponseEntity&lt;&gt;(
+                new TokenDTO(),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+    }
+}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Ruta de prueba" duration="0">
+        <p>Duration 0:05:00</p>
+<h2 is-upgraded>Ruta</h2>
+<p>Para corroborar que la configuración ha sido exitosa, se creará una ruta de prueba que estará protegida por el interceptor de Spring Security y garantizará la autenticidad del usuario.</p>
+<p>Para ello se cebe crear la clase <em>TestController</em>, junto al método <em>hello</em></p>
+<pre><code language="language-java" class="language-java">@RestController
+@RequestMapping(&#34;/test&#34;)
+public class TestController {
+
+	@GetMapping(&#34;/&#34;)
+	public ResponseEntity&lt;MessageDTO&gt; hello() {
+		return new ResponseEntity&lt;&gt; (
+					new MessageDTO(&#34;Hello World&#34;),
+					HttpStatus.OK
+				);
+	}
+}
+</code></pre>
+<h2 is-upgraded>Pruebas</h2>
+<ol type="1">
+<li>Inicio de sesión</li>
+</ol>
+<p class="image-container"><img alt="Inicio de sesión" src="img\\52fac29a0569a32a.png"></p>
+<ol type="1" start="2">
+<li>Ruta de prueba - Sin token</li>
+</ol>
+<p class="image-container"><img alt="Error - Sin token" src="img\\24c70672b3be2d35.png"></p>
+<ol type="1" start="3">
+<li>Ruta de prueba - Token invalido</li>
+</ol>
+<p class="image-container"><img alt="Error - token invalido" src="img\\46b780e475508a6f.png"></p>
+<ol type="1" start="4">
+<li>Ruta de prueba - Token vencido</li>
+</ol>
+<p class="image-container"><img alt="Error - token vencido" src="img\\8f69cbffba7d1703.png"></p>
+<ol type="1" start="5">
+<li>Ruta de prueba - Token válido</li>
+</ol>
+<p class="image-container"><img alt="Token valido" src="img\\220ce7c94870e561.png"></p>
+<ol type="1" start="6">
+<li>Ejemplo de tabla de tokens</li>
+</ol>
+<p class="image-container"><img alt="Tabla de token" src="img\\f1b6f2723d3bbd5e.png"></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Correcciones v1.0" duration="15">
+        <h2 is-upgraded>Herramientas para procesar el token</h2>
+<ol type="1">
+<li>Archivo <strong>TokenManager.java</strong></li>
+</ol>
+<p>Dentro del método <strong>validateJwtToken</strong>, los métodos de la librería pueden devolver una excepción, ya sea cuando el token esté mal formado o cuando se haya vencido. En ambos casos la validez es falsa, por lo que se retornará ese valor en el método.</p>
+<pre><code language="language-java" class="language-java">public Boolean validateJwtToken(String token, String givenUsername) {
+    try {
+        String username = getUsernameFromToken(token);
+        Claims claims = Jwts.parser()
+                .setSigningKey(jwtSecret)
+                .parseClaimsJws(token)
+                .getBody();
+        
+        Boolean isTokenExpired = claims.getExpiration().before(new Date());
+        
+        return (username.equals(givenUsername) &amp;&amp; !isTokenExpired);
+    }catch (Exception e) {
+        return false;
+    }
+	}
+</code></pre>
+<h2 is-upgraded>Filtro de Token JWT</h2>
+<p>Cuando se valida el token y se coteja con los tokens de la base de datos, no se limpia el registro en la base, estableciendo cuáles están activos y cuáles no.</p>
+<ol type="1">
+<li>Archivo <strong>TokenRepository.java</strong></li>
+</ol>
+<p>Lo primero será crear una nueva &#34;query&#34; en el repositorio de token, que permita consultar los tokens activos de un usuario en particular.</p>
+<pre><code language="language-java" class="language-java">public interface TokenRepository extends JpaRepository&lt;Token, Long&gt;{
+    List&lt;Token&gt; findByUserAndActive(User user, Boolean active);
+}
+</code></pre>
+<ol type="1" start="2">
+<li>Archivo <strong>UserService.java</strong> y <strong>UserServiceImpl.java</strong></li>
+</ol>
+<p>Dentro del servicio de usuario se debe declarar un método que verifique la validez de un token con respecto a un usuario.</p>
+<pre><code language="language-java" class="language-java">public interface UserService {
+	...
+	Boolean isTokenValid(User user, String token) throws Exception;
+}
+</code></pre>
+<p>Luego, en la implementación, se definirán dos métodos:</p>
+<ul>
+<li><strong>cleanTokens</strong>: Encargado de verificar los tokens activos y desactivar los que ya no son válidos. Es un método particular y privado de la implementación.</li>
+</ul>
+<pre><code language="language-java" class="language-java">@Transactional(rollbackOn = Exception.class)
+private void cleanTokens(User user) {
+    List&lt;Token&gt; tokens = tokenRepository.findByUserAndActive(user, true);
+    
+    tokens.forEach((userToken) -&gt; {
+        if(!tokenManager.validateJwtToken(userToken.getContent(), user.getUsername())) {
+            userToken.setActive(false);
+            tokenRepository.save(userToken);
+        }
+    });
+}
+</code></pre>
+<ul>
+<li><strong>isTokenValid</strong>: Definición del método declarado en la interfaz del servicio que, dado un usuario y un token, verificará la validez del mismo, limpiando los registros por el camino.</li>
+</ul>
+<pre><code language="language-java" class="language-java">@Override
+@Transactional(rollbackOn = Exception.class)
+public Boolean isTokenValid(User user, String token) throws Exception {
+    cleanTokens(user);
+    
+    List&lt;Token&gt; tokens = tokenRepository.findByUserAndActive(user, true);
+            
+    return tokens.stream()
+    .filter((userToken) -&gt; {
+        return userToken.getContent().equals(token) &amp;&amp; userToken.getActive();
+    })
+    .findAny()
+    .orElse(null) != null;
+}
+</code></pre>
+<ol type="1" start="3">
+<li>Archivo <strong>JwtFilter</strong></li>
+</ol>
+<p>Se actualizó los métodos utilizados para validar y verificar el token, para garantizar que se valide el token y se limpien los registros inválidos. Además, se había omitido la inclusión del token de autenticación en el contexto de Spring security</p>
+<pre><code language="language-java" class="language-java">String tokenHeader = request.getHeader(&#34;Authorization&#34;);
+String username = null;
+String token = null;
+
+if(tokenHeader != null &amp;&amp; tokenHeader.startsWith(&#34;Bearer &#34;)) {
+    token = tokenHeader.substring(7);
+    
+    try {
+        username = tokenManager.getUsernameFromToken(token);
+    } catch (IllegalArgumentException e) {
+        System.out.println(&#34;Unable to get JWT Token&#34;);
+    } catch (ExpiredJwtException e) {
+        System.out.println(&#34;JWT TOKEN has expired&#34;);
+    } catch (MalformedJwtException e) {
+        System.out.println(&#34;JWT Malformado&#34;);
+    }
+} else {
+    System.out.println(&#34;Bearer string not found&#34;);
+}
+
+if (username != null &amp;&amp; SecurityContextHolder.getContext().getAuthentication() == null) {
+    try {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        User userFound = userService.findOneByIdentifer(username);
+        
+        if(userFound != null) {
+            boolean isTokenRegistered = userService.isTokenValid(userFound, token);
+            
+            if(isTokenRegistered) {
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities()
+                );
+                
+                authToken.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+                
+                //Incluyendo en contexto
+                SecurityContextHolder
+                    .getContext()
+                    .setAuthentication(authToken);
+            }
+        }
+        
+    } catch(Exception e) {
+        System.err.println(e);
+        System.out.println(&#34;Error in token verification&#34;);
+    }
+}
+
+filterChain.doFilter(request, response);
+</code></pre>
+<h2 is-upgraded>Ruta de login</h2>
+<ol type="1">
+<li>Archivo <strong>UserServiceImpl.java</strong></li>
+</ol>
+<p>Se modificó la definición del método <em>insertToken</em>, para que reutilice los métodos de limpiar tokens.</p>
+<pre><code language="language-java" class="language-java">public class UserServiceImpl implements UserService {
+
+    @Override
+	@Transactional(rollbackOn = Exception.class)
+	public void insertToken(User user, String token) throws Exception {
+		cleanTokens(user);
+		
+		Token newToken = new Token(token, user);
+		tokenRepository.save(newToken);
+	}
+
+}
+</code></pre>
+<h2 is-upgraded>Ruta de prueba</h2>
+<p>Se añadió la ruta de prueba.</p>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/codelab-elements/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/prettify.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>
