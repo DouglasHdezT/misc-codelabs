@@ -1,0 +1,26 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2022-06-15T17:43:46-06:00",
+  "id": "taller-04",
+  "duration": 98,
+  "title": "Taller IV - Paginación con JPA Repository",
+  "summary": "Taller IV - Paginación con JPA Repository",
+  "source": ".\\makdown\\tallerIV.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "java"
+  ],
+  "tags": [
+    "diy",
+    "taller",
+    "web"
+  ],
+  "feedback": "https://dei.uca.edu.sv",
+  "url": "taller-04"
+}

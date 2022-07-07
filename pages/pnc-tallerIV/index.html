@@ -1,0 +1,362 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Taller IV - Paginación con JPA Repository</title>
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/codelab-elements/codelab-elements.css">
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <google-codelab-analytics gaid="UA-49880327-14"></google-codelab-analytics>
+  <google-codelab codelab-gaid=""
+                  id="taller-04"
+                  title="Taller IV - Paginación con JPA Repository"
+                  environment="web"
+                  feedback-link="https://dei.uca.edu.sv">
+    
+      <google-codelab-step label="Introducción" duration="3">
+        <h2 is-upgraded>Dinámica</h2>
+<p>Durante este taller se implementará la funcionalidad de paginación de los distintos registros en las entidades de la base de datos, permitiendo optimizar los tiempos de respuesta de las peticiones.</p>
+<p>Se realizarán dos etapas en el taller:</p>
+<ul>
+<li>Una parte guiada donde, a partir de estructuras existentes y conceptos explicados, se construirá todo el módulo referente a la implementación de la paginación en una entidad</li>
+<li>La segunda parte del taller consistirá en construir una UI que, a partir de las rutas anteriores, consuma la información de forma estructurada y utilizando la paginación implementada.</li>
+</ul>
+<p>El enlace de github classroom para realizar la entrega grupal es <a href="https://classroom.github.com/a/a-lY8vhs" target="_blank">https://classroom.github.com/a/a-lY8vhs</a></p>
+<aside class="special"><p>     El código fuente base se encuentra como plantilla en los repositorios creados de github classroom. Si se desea consultar de forma independiente, se debe de ir al repositorio de códigos de la materia, donde se encuentra actualizado y debidamente versionado </p>
+</aside>
+<h2 is-upgraded>¿Qué aprenderás?</h2>
+<p>Durante la realización de este taller se desarrollarán los siguientes temas:</p>
+<ul>
+<li>Paginación de entidades</li>
+<li>Consumo web de peticiones con paginación</li>
+</ul>
+<h2 is-upgraded>Requisitos</h2>
+<ul>
+<li>Spring Tools Suite (IDE)</li>
+<li>Instancia de bases de datos con el gestor Postgres</li>
+<li>Cliente de bases de datos - Dbeaver</li>
+<li>Cliente REST para peticiones HTTP - Insomnia</li>
+<li>Cualquier tecnología de desarrollo web</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Uso de Paging and sorting repository" duration="15">
+        <p>Para poder activar las funcionalidades de paginación y ordenación de elementos, es necesario cambiar la interfaz JpaRepository por PagingAndSortingRepository. Esta interfaz brindará las mismas funcionalidades del repositorio normal, pero todas las funciones encargadas de recuperar colecciones de datos tendrán que recibir parámetros que permitan paginar los mismos.</p>
+<p>Para ejemplificar esta funcionalidad, se hará uso de la entidad <strong>Book</strong>. Se creará una ruta específica que, a partir de dos parámetros (page y limit), devolverá los elementos que correspondan a estos limites.</p>
+<p>Lo primero será modificar el repositorio en <em>BookRepository.java</em>, cambiando la interfaz a la que soporta paginación</p>
+<pre><code language="language-java" class="language-java">public interface BookRepository extends PagingAndSortingRepository&lt;Book, String&gt; {
+	
+}
+</code></pre>
+<p>Esto, debido a la firma de los métodos de la nueva interfaz, generará un error en los servicios del la entidad Book. El nuevo método <strong>findAll</strong> ahora recibe un parámetro de tipo <em>Pageable</em> que dictará la página y la cantidad de objetos a recuperar.</p>
+<p>Por el momento se <em>quemará</em> este valor para demostrar lo que sucede, posteriormente se actualizará para ser ams dinámico.</p>
+<pre><code language="language-java" class="language-java">@Override
+public List&lt;Book&gt; findAll() {
+    return bookRepository
+            .findAll(PageRequest.of(0, 10))
+            .toList();
+}
+</code></pre>
+<p>Al probar la ruta <strong>/library/books</strong>, en lugar de obtener todos los resultados de los libros almacenados, se obtendrán solo 10. Esto se debe a que <strong>PageRequest.of()</strong> recibe como parámetros las configuraciones necesarias para manejar los datos por bloques, objetivo principal de la paginación.</p>
+<pre><code language="language-java" class="language-java">PageRequest(&lt;page&gt;, &lt;limit&gt;)
+</code></pre>
+<p>Estos dos parámetros representan lo siguiente:</p>
+<ul>
+<li>page: el correlativo de la página a recuperar</li>
+<li>limit: la cantidad de elementos por páginas</li>
+</ul>
+<p>En este caso, se solicita la página 0 con 10 elementos. Si se quisiera el siguiente bloque de elementos, se debe solicitar la página 1 con 10 elementos; y así sucesivamente, configurando los bloques de acuerdo a las necesidades del problema.</p>
+<pre><code language="language-json" class="language-json">[
+	{
+		&#34;isbn&#34;: &#34;023229140-3&#34;,
+		&#34;title&#34;: &#34;War of the Shaolin Temple (Shao Lin shi san gun seng)&#34;,
+		&#34;publishDate&#34;: &#34;1945-04-17T06:00:00.000+00:00&#34;,
+		&#34;stock&#34;: 25,
+		&#34;category&#34;: {
+			&#34;id&#34;: &#34;CT06&#34;,
+			&#34;name&#34;: &#34;Scyfy&#34;
+		}
+	},
+	{
+		&#34;isbn&#34;: &#34;516162448-5&#34;,
+		&#34;title&#34;: &#34;The War at Home&#34;,
+		&#34;publishDate&#34;: &#34;2003-05-31T06:00:00.000+00:00&#34;,
+		&#34;stock&#34;: 14,
+		&#34;category&#34;: {
+			&#34;id&#34;: &#34;CT09&#34;,
+			&#34;name&#34;: &#34;Adventure&#34;
+		}
+	},
+	{
+		&#34;isbn&#34;: &#34;899931058-2&#34;,
+		&#34;title&#34;: &#34;Flash Point (a.k.a. Flashpoint) (Dou fo sin)&#34;,
+		&#34;publishDate&#34;: &#34;1966-12-25T06:00:00.000+00:00&#34;,
+		&#34;stock&#34;: 22,
+		&#34;category&#34;: {
+			&#34;id&#34;: &#34;CT01&#34;,
+			&#34;name&#34;: &#34;Action&#34;
+		}
+	},
+	{
+		&#34;isbn&#34;: &#34;826576817-6&#34;,
+		&#34;title&#34;: &#34;Strange Magic&#34;,
+		&#34;publishDate&#34;: &#34;2000-08-27T06:00:00.000+00:00&#34;,
+		&#34;stock&#34;: 24,
+		&#34;category&#34;: {
+			&#34;id&#34;: &#34;CT08&#34;,
+			&#34;name&#34;: &#34;Action&#34;
+		}
+	},
+	{
+		&#34;isbn&#34;: &#34;493606665-6&#34;,
+		&#34;title&#34;: &#34;Underdog&#34;,
+		&#34;publishDate&#34;: &#34;1952-08-28T06:00:00.000+00:00&#34;,
+		&#34;stock&#34;: 14,
+		&#34;category&#34;: {
+			&#34;id&#34;: &#34;CT06&#34;,
+			&#34;name&#34;: &#34;Scyfy&#34;
+		}
+	},
+	{
+		&#34;isbn&#34;: &#34;408800373-X&#34;,
+		&#34;title&#34;: &#34;Cold Showers (Douches froides)&#34;,
+		&#34;publishDate&#34;: &#34;1951-11-05T06:00:00.000+00:00&#34;,
+		&#34;stock&#34;: 10,
+		&#34;category&#34;: {
+			&#34;id&#34;: &#34;CT02&#34;,
+			&#34;name&#34;: &#34;Drama&#34;
+		}
+	},
+	{
+		&#34;isbn&#34;: &#34;187368784-2&#34;,
+		&#34;title&#34;: &#34;Stanley Kubrick: A Life in Pictures&#34;,
+		&#34;publishDate&#34;: &#34;2018-08-06T06:00:00.000+00:00&#34;,
+		&#34;stock&#34;: 10,
+		&#34;category&#34;: {
+			&#34;id&#34;: &#34;CT04&#34;,
+			&#34;name&#34;: &#34;Comedy&#34;
+		}
+	},
+	{
+		&#34;isbn&#34;: &#34;834712660-7&#34;,
+		&#34;title&#34;: &#34;Beauty and the Beast (Belle et la bête, La)&#34;,
+		&#34;publishDate&#34;: &#34;2001-10-20T06:00:00.000+00:00&#34;,
+		&#34;stock&#34;: 14,
+		&#34;category&#34;: {
+			&#34;id&#34;: &#34;CT05&#34;,
+			&#34;name&#34;: &#34;Horror&#34;
+		}
+	},
+	{
+		&#34;isbn&#34;: &#34;997619320-3&#34;,
+		&#34;title&#34;: &#34;Outlaw Josey Wales, The&#34;,
+		&#34;publishDate&#34;: &#34;1948-07-04T06:00:00.000+00:00&#34;,
+		&#34;stock&#34;: 19,
+		&#34;category&#34;: {
+			&#34;id&#34;: &#34;CT08&#34;,
+			&#34;name&#34;: &#34;Action&#34;
+		}
+	},
+	{
+		&#34;isbn&#34;: &#34;819554513-0&#34;,
+		&#34;title&#34;: &#34;Frozen Land (Paha maa)&#34;,
+		&#34;publishDate&#34;: &#34;1962-05-24T06:00:00.000+00:00&#34;,
+		&#34;stock&#34;: 3,
+		&#34;category&#34;: {
+			&#34;id&#34;: &#34;CT04&#34;,
+			&#34;name&#34;: &#34;Comedy&#34;
+		}
+	}
+]
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Servicios dinámicos" duration="5">
+        <p>Se modificará el servicio <strong>findAll</strong> dentro de <em>BookService.java</em> para permitir que este reciba los parámetros previamente descritos (page y limit). Esto permitirá dinamizar los resultados que esta función provee, dependiendo de los valores que el controlador le proporcione.</p>
+<pre><code language="language-java" class="language-java">public interface BookService {
+	...
+    List&lt;Book&gt; findAll(int page, int limit);
+	...
+}
+</code></pre>
+<p>A su vez, se tendrá que modificar la declaración y definición del método en la implementación del servicio. Para poder dinamizar este proceso se deberá generar un PageRequest justo antes de solicitar los valores, configurando los parámetros recibidos de quien manda a llamar al servicio.</p>
+<pre><code language="language-java" class="language-java">public class BookServiceImpl implements BookService{
+    
+    ...	
+	
+    @Override
+	public List&lt;Book&gt; findAll(int page, int limit) {
+		PageRequest request = PageRequest.of(page, limit);
+		
+		return bookRepository
+				.findAll(request)
+				.toList();
+	}
+
+    ...
+}
+</code></pre>
+<p>Al tener esta entidad separada, permitirá agregar otros parámetros de configuración, principalmente relacionados con el ordenamiento de los elementos. Por ejemplo, en este caso se ordenará los elementos de acuerdo al titulo del libro.</p>
+<pre><code language="language-java" class="language-java">PageRequest request = PageRequest
+    .of(page, limit, Sort.by(&#34;title&#34;).ascending());
+</code></pre>
+<p>Cabe recalcar que se pueden realizar anidaciones de ordenamientos, y que es importante realizarlos de esta forma, ya que son tomados en consideración de forma directa en la paginación de los elementos.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Paging query en la ruta del controlador." duration="15">
+        <p>Para finalizar la funcionalidad de paginación de los elementos incluidos en la entidad <strong>Book</strong>, se debe de recibir los parámetros de configuración a través de la ruta, y realizar la llamada de del servicio con estos elementos.</p>
+<h2 is-upgraded>DTO para el control de parámetros</h2>
+<p>Lo primero a tomar en cuanta, es la creación de un DTO, que permita la mapear los parámetros recibidos por parte del cliente que realiza la consulta.</p>
+<p>El archivo a crear será <strong>PageableDTO.java</strong>, y tendrá la siguiente forma:</p>
+<pre><code language="language-java" class="language-java">public class PageableDTO {
+	@Min(0)
+    private int page;
+	
+    @Min(0)
+    private int limit;
+	
+	public PageableDTO() {
+		super();
+		
+		this.page = 0;
+		this.limit = 10;
+	}
+
+	public int getPage() {
+		return page;
+	}
+
+	public void setPage(int page) {
+		this.page = page;
+	}
+
+	public int getLimit() {
+		return limit;
+	}
+
+	public void setLimit(int limit) {
+		this.limit = limit;
+	}
+}
+</code></pre>
+<p>Cabe recalcar que se establecen como valores por defecto la página 0, con límite de 10 elementos. Esto para tomar en cuenta si el usuario no envía uno de estos valores, siempre exista un dato.</p>
+<h2 is-upgraded>Modificación de servicios.</h2>
+<p>Ahora se modificarán los servicios, previamente adaptados, para aceptar este DTO, en lugar de información o parámetros sueltos.</p>
+<pre><code language="language-java" class="language-java">public interface BookService {
+	...
+    List&lt;Book&gt; findAll(PageableDTO info);
+	...
+}
+</code></pre>
+<pre><code language="language-java" class="language-java">@Service
+public class BookServiceImpl implements BookService{
+
+    ...
+
+	@Override
+	public List&lt;Book&gt; findAll(PageableDTO info) {
+		PageRequest request = PageRequest
+				.of(info.getPage(), info.getLimit(), Sort.by(&#34;title&#34;).ascending());
+		
+		return bookRepository
+				.findAll(request)
+				.toList();
+	}
+
+    ...
+
+}
+</code></pre>
+<h2 is-upgraded>Adecuación del controlador.</h2>
+<p>Dentro del controlador de la librería, se adecuará la estructura del método <strong>findAllBooks</strong> para recibir los parámetros de paginación, y utilizar el servicio recién creado.</p>
+<p>El flujo de datos a implementar en el controlador será el siguiente:</p>
+<ul>
+<li>Se recibirá, como parámetro,  un objeto de tipo PageableDTO, que contendrá la información antes descrita</li>
+<li>Se verificará si existe algún error de validación, y se retornará un estado 400 en caso de existir</li>
+<li>Se pasará el objeto recibido como parámetro al método del servicio que obtiene los libros</li>
+</ul>
+<pre><code language="language-java" class="language-java">@GetMapping(&#34;/books&#34;)
+public ResponseEntity&lt;List&lt;Book&gt;&gt; findAllBooks(@Valid PageableDTO info, BindingResult result) {	
+    
+    if(result.hasErrors()) {
+        return new ResponseEntity&lt;&gt;(
+            null,
+            HttpStatus.BAD_REQUEST
+        );
+    }
+    
+    try {
+        User userAuth = userService.getUserAuthenticated();
+        System.out.println(userAuth.getName());
+        
+        List&lt;Book&gt; books = bookService.findAll(info);
+        
+        return new ResponseEntity&lt;&gt;(
+            books,
+            HttpStatus.OK
+        );
+    } catch (Exception e) {
+        return new ResponseEntity&lt;&gt;(
+            null,
+            HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+}
+</code></pre>
+<p>Con esta configuración, la ruta se encuentra completamente configurada para devolver elementos con la técnica de paginación de elementos.</p>
+<aside class="special"><p>     Para probar los resultados de forma mas sencilla se recomienda excluir esta ruta, del filtro de token aplicado el taller pasado. </p>
+</aside>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Do it yourself" duration="60">
+        <p>Para finalizar la práctica correspondiente al taller IV, se realizarán los siguientes entregables:</p>
+<h2 is-upgraded>Rutas de prueba (1/2)</h2>
+<p>Configurar en el proyecto de insomnia o postman diversas pruebas a la ruta <strong>/library/books</strong>:</p>
+<ul>
+<li>Sin parámetros de paginación</li>
+<li>page = 0 &amp; limit = 10</li>
+<li>page = 0 &amp; limit = 20</li>
+<li>page = 4 &amp; limit = 20</li>
+<li>page = 5 &amp; limit = 20</li>
+</ul>
+<p>Entrega: <strong>15/06/2022 antes que finalice el taller</strong></p>
+<h2 is-upgraded>Tabla de datos (1/2)</h2>
+<p>Implementar en cualquier librería de diseño, una tabla dinámica que muestre todos los datos correspondientes a los libros, utilizando todas las funcionalidades de paginación desarrollados en este taller.</p>
+<p>El diseño y funcionalidad del cliente es libre, siempre y cuando utilice de forma precisa y correcta la ruta paginada. Se debe poder seleccionar la página, y la cantidad de elementos a solicitar.</p>
+<p>Entrega: <strong>16/06/2022 de forma presencial. Ser recibirán trabajos hasta las 12:00 md</strong>. NO ES NECESARIO QUE VENGA TODO EL EQUIPO.</p>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/codelab-elements/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/prettify.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>
